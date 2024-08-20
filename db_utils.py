@@ -88,3 +88,54 @@ if __name__ == "__main__":
     loaded_df = load_data_from_csv("C:/Users/user/Desktop/my_test_repo/Finance Project/loan_payments_data.csv")
     print("Data extraction, saving, and re-loading complete.")
     print(loaded_df.head())
+
+# Load the CSV file
+file_path = "C:/Users/user/Desktop/my_test_repo/Finance Project/loan_payments_data.csv"
+df = pd.read_csv(file_path)
+
+
+class DataTransform:
+    def __init__(self, df):
+        self.df = df
+    
+    def transform_dates(self, date_columns):
+        """Convert date columns to datetime and retain only month and year."""
+        self.df[date_columns] = self.df[date_columns].apply(pd.to_datetime, format='%b-%y', errors='coerce')
+        self.df[date_columns] = self.df[date_columns].apply(lambda x: x.dt.to_period('M'))
+    
+    def rename_and_transform_term_column(self):
+        """Rename the 'term' column to 'term_in_months' and convert it to numeric."""
+        self.df.rename(columns={'term': 'term_in_months'}, inplace=True)
+        
+        # Extract numeric part of the term and handle NaN values
+        self.df['term_in_months'] = self.df['term_in_months'].str.extract(r'(\d+)')
+        self.df['term_in_months'] = pd.to_numeric(self.df['term_in_months'], errors='coerce')
+
+    def convert_to_categorical(self, categorical_columns):
+        """Convert specified columns to categorical data types."""
+        self.df[categorical_columns] = self.df[categorical_columns].astype('category')
+    
+    def apply_transformations(self):
+        """Apply all transformations."""
+        # List of date columns to be transformed
+        date_columns = ['issue_date', 'earliest_credit_line', 'last_payment_date', 'next_payment_date', 'last_credit_pull_date']
+        
+        # Apply transformations
+        self.transform_dates(date_columns)
+        self.rename_and_transform_term_column()
+        
+        # Example categorical columns (update based on your dataset)
+        categorical_columns = ['grade', 'sub_grade', 'home_ownership', 'verification_status', 'loan_status', 'purpose']
+        self.convert_to_categorical(categorical_columns)
+        
+        return self.df
+
+# Instantiate the DataTransform class
+transformer = DataTransform(df)
+
+# Apply all transformations
+df_transformed = transformer.apply_transformations()
+
+# Save the cleaned DataFrame to a new CSV file
+cleaned_file_path = "C:/Users/user/Desktop/my_test_repo/Finance Project/loan_payments_data_cleaned.csv"
+df.to_csv(cleaned_file_path, index=False)
